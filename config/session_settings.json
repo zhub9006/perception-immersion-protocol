@@ -1,0 +1,98 @@
+{
+  "_comment": "PIP Session-Level Settings — loaded by UXF at session start",
+  "_version": "1.0.0",
+  "_protocol": "Perception-Immersion Protocol (PIP)",
+  "_uxf_version": "2.4.5",
+  "_settings_search_pattern": "*.json",
+
+  "experiment_name": "pip_experiment",
+  "protocol_version": "1.0.0",
+  "institution": "YOUR_INSTITUTION",
+  "irb_number": "YOUR_IRB_NUMBER",
+  "data_output_path": "data_output",
+  "sort_data_into_folders": true,
+  "force_en_us_locale": true,
+
+  "session": {
+    "n_blocks": 3,
+    "trials_per_block": 20,
+    "total_trials": 120,
+    "inter_block_rest_s": 120,
+    "session_max_duration_min": 90,
+    "randomise_block_order": false,
+    "counterbalance_method": "latin_square"
+  },
+
+  "display": {
+    "target_fps": 90,
+    "vsync": true,
+    "anti_aliasing": 4,
+    "shadow_quality": "high",
+    "render_scale": 1.0,
+    "eye_render_width": 1832,
+    "eye_render_height": 1920
+  },
+
+  "tracking": {
+    "position_tracking": true,
+    "rotation_tracking": true,
+    "hand_tracking": true,
+    "record_head_position": true,
+    "record_controller_position": true,
+    "tracker_sample_rate_hz": 90
+  },
+
+  "audio": {
+    "master_volume": 0.8,
+    "spatializer_plugin": "steam_audio",
+    "hrtf_enabled": true,
+    "reverb_enabled": true,
+    "occlusion_enabled": true
+  },
+
+  "haptics": {
+    "enabled": true,
+    "default_amplitude": 0.5,
+    "default_duration_ms": 100,
+    "event_haptics": true
+  },
+
+  "safety": {
+    "ssq_check_interval_trials": 10,
+    "ssq_caution_threshold": 15,
+    "ssq_stop_threshold": 20,
+    "mandatory_break_duration_s": 600,
+    "auto_terminate_on_stop_threshold": false,
+    "experimenter_alert_on_caution": true
+  },
+
+  "measures": {
+    "ipq_after_each_block": true,
+    "ssq_before_session": true,
+    "ssq_after_each_block": true,
+    "ssq_after_session": true,
+    "pip_scale_after_each_trial": false,
+    "pip_scale_after_each_block": true,
+    "reaction_time_record": true,
+    "head_movement_entropy_record": true
+  },
+
+  "stimuli": {
+    "environment": "forest_clearing",
+    "lighting_mode": "dynamic",
+    "target_object": "glowing_sphere",
+    "target_color": [1.0, 0.8, 0.0],
+    "distractor_color": [0.5, 0.5, 0.5],
+    "target_size_m": 0.15,
+    "audio_cue_on_target": true
+  },
+
+  "output_files": {
+    "trial_results": "trial_results.csv",
+    "participant_details": "participant_details.csv",
+    "session_log": "log.csv",
+    "settings_snapshot": "settings.json",
+    "head_tracker_prefix": "head_movement_T",
+    "controller_tracker_prefix": "controller_T"
+  }
+}
