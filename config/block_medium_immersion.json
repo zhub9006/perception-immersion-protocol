@@ -1,0 +1,35 @@
+{
+  "_comment": "MEDIUM IMMERSION BLOCK — threshold-level fidelity settings",
+  "_block_label": "medium_immersion",
+  "_fidelity_level": 2,
+
+  "display_fps": 60,
+  "camera_fov": 90,
+  "render_latency_ms": 40,
+  "texture_quality": "1024",
+  "render_scale": 1.0,
+  "anti_aliasing": 2,
+  "shadow_distance_m": 25,
+  "ambient_occlusion": false,
+  "bloom": false,
+
+  "audio_spatialization": "stereo",
+  "audio_reverb_ir": "none",
+  "audio_occlusion": false,
+
+  "haptic_level": "vibration",
+  "haptic_amplitude": 0.5,
+
+  "task_type": "target_detection",
+  "stimulus_duration_ms": 200,
+  "isi_min_ms": 800,
+  "isi_max_ms": 2000,
+  "target_probability": 0.25,
+  "n_trials": 20,
+  "response_window_ms": 1500,
+  "feedback_duration_ms": 500,
+
+  "expected_ipq_gp_score": 4.1,
+  "expected_pip_scale_score": 43,
+  "expected_ssq_ts": 10
+}
