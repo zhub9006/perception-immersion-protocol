@@ -1,177 +1,257 @@
-# 04 — Data Collection Guide (UXF Setup & Pipeline)
+# 04 — Data Collection Guide
 
-## 4.1 UXF Architecture Overview
+> **Document status:** Operational reference | **Version:** 1.0.0 | **Last updated:** 2026
 
-The PIP is built on **UXF 2.4.5** (Unity Experiment Framework by Brookes et al., 2020). UXF provides:
-- **Session/Block/Trial** hierarchy for experiment structure
-- **Cascading settings system** — JSON files applied at Session, Block, or Trial level
-- **Automatic data output** — CSV trial results, JSON settings snapshot, tracker CSVs
-- **Events system** — `OnSessionBegin`, `OnTrialBegin`, `OnTrialEnd` Unity Events
+This guide covers the end-to-end data collection workflow: environment setup, UXF configuration, session management, data pipeline, and quality control.
 
-### Key UXF Components Required
+---
+
+## 1. Pre-Session Setup Checklist
+
+### 1.1 Hardware
+- [ ] HMD charged to >80% (or plugged in via Link cable)
+- [ ] Base stations powered on and tracking confirmed (Valve Index only)
+- [ ] Controllers paired and tracking confirmed
+- [ ] Test PC connected to HMD via USB 3.0 / Air Link
+- [ ] Room boundary defined and clear of obstacles
+- [ ] Backup HMD charged and available
+- [ ] FPSVR or equivalent performance monitor installed
+
+### 1.2 Software
+- [ ] Unity project opened and `PIP_Forest_v1` scene loaded
+- [ ] UXF Session component configured:
+  - `Experiment Name`: `pip_experiment`
+  - `Session Number`: set per participant schedule
+  - `Settings Search Pattern`: `*.json`
+  - `Data Handlers`: FileSaver (local) + optional cloud sync
+- [ ] `config/session_settings.json` copied to `Assets/StreamingAssets/`
+- [ ] Correct fidelity block configs present in `StreamingAssets/`
+- [ ] Data output directory confirmed: `data_output/<experiment>/<ppid>/<session>/`
+- [ ] Time synchronisation: PC clock synced to NTP
+
+### 1.3 Environment
+- [ ] Quiet room, minimal external noise
+- [ ] Dim lighting (reduces HMD reflections)
+- [ ] Chair available for seated conditions
+- [ ] Water and rest area available
+- [ ] Informed consent forms printed
+- [ ] Debrief documents printed
+
+---
+
+## 2. UXF Configuration
+
+### 2.1 Session Settings JSON Schema
+
+The `config/session_settings.json` file controls top-level session parameters:
+
+```json
+{
+  "experiment_name": "pip_experiment",
+  "protocol_version": "1.0.0",
+  "researcher_id": "RESEARCHER_ID_HERE",
+  "ethics_ref": "ETHICS_REF_HERE",
+  "target_n": 30,
+  "blocks_per_session": 3,
+  "trials_per_block": 20,
+  "iti_min_ms": 1000,
+  "iti_max_ms": 1500,
+  "response_window_ms": 3000,
+  "ssq_stop_threshold": 15,
+  "data_output_path": "data_output",
+  "log_frame_rate": true,
+  "log_head_rotation": true,
+  "head_rotation_sample_rate_hz": 90
+}
 ```
-[UXF_Rig]
-├── Session (MonoBehaviour)
-│   ├── experimentName: "pip_experiment"
-│   ├── settingsMode: 0 (load from file)
-│   ├── settingsSearchPattern: "*.json"
-│   └── storeSessionSettings: true
-└── [UXF_DataHandling]
-    ├── File Saver (active: true)
-    │   ├── storagePath: "data_output"
-    │   └── sortDataIntoFolders: true
-    ├── Download or Copy (active: false)
-    └── Web AWS DynamoDB (active: false)
+
+### 2.2 Fidelity Block Config JSON Schema
+
+Each fidelity block has its own config file. Example for High Fidelity:
+
+```json
+{
+  "block_name": "block_high_immersion",
+  "fidelity_level": "HF",
+  "frame_rate_target": 90,
+  "latency_injection_ms": 0,
+  "fov_degrees": 110,
+  "render_scale": 1.4,
+  "texture_resolution": 2048,
+  "anti_aliasing": "MSAA_4X_TAA",
+  "spatial_audio_mode": "HRTF",
+  "ambient_soundscape": "multi_source_spatialised",
+  "haptics_mode": "parametric",
+  "tracking_dof": 6,
+  "tracking_noise_mm": 0,
+  "shadow_quality": "soft",
+  "post_processing": "full_urp",
+  "grass_foliage": "animated_gpu"
+}
 ```
 
 ---
 
-## 4.2 Directory Setup
+## 3. Participant Onboarding Procedure
 
-### Unity Project Structure
-```
-Assets/
-├── StreamingAssets/
-│   ├── session_settings.json        ← Copy from config/
-│   ├── block_high_immersion.json    ← Copy from config/
-│   ├── block_medium_immersion.json  ← Copy from config/
-│   └── block_low_immersion.json     ← Copy from config/
-├── UXF/                             ← UXF package contents
-├── PIP/
-│   ├── Scripts/
-│   │   ├── PIPExperimentBuilder.cs  ← Session setup
-│   │   ├── PIPSceneManipulator.cs   ← Fidelity control
-│   │   ├── PIPQuestionnaireManager.cs
-│   │   └── PIPSafetyMonitor.cs
-│   └── Prefabs/
-│       ├── TargetObject.prefab
-│       └── DistractorObject.prefab
-└── Scenes/
-    ├── PIP_MainScene.unity
-    └── PIP_ForestEnvironment.unity
-```
+### Step 1: Consent (T+00:00)
+1. Greet participant; provide information sheet
+2. Allow time to read (minimum 5 minutes)
+3. Collect signed consent form
+4. Assign participant ID (format: `PIP_XXX`, e.g., `PIP_001`)
 
-### Output Directory Structure
+### Step 2: Screening (T+05:00)
+1. Administer baseline SSQ
+2. If SSQ Total Score ≥10: exclude participant; log reason
+3. Collect demographic questionnaire:
+   - Age, gender
+   - VR experience (Novice / Intermediate / Experienced)
+   - Gaming experience (hours/week)
+   - Any vestibular conditions
+
+### Step 3: HMD Fitting (T+10:00)
+1. Fit HMD to participant; adjust head strap
+2. Set IPD (interpupillary distance) to participant's measured IPD
+   - Measure with pupillometer or ruler
+   - Enter into HMD IPD adjustment
+3. Confirm visual clarity (ask participant to describe a static text target)
+4. Confirm controller grip comfort
+5. Explain room boundary system
+
+### Step 4: Orientation Trial (T+12:00)
+1. Load neutral condition (MF settings, no task)
+2. Allow 5 minutes free exploration of the virtual forest
+3. Answer any questions about the environment
+4. Explain task instructions (Simple and Complex tasks)
+5. Conduct 5 practice trials (not recorded)
+
+---
+
+## 4. Block Execution Procedure
+
+Repeat for each of the 3 (or 6) blocks:
+
+1. **Load block config:** Select participant's counterbalanced condition order from the Latin square schedule (see `docs/03_experiment_design.md`)
+2. **Pre-block SSQ:** Administer SSQ; check Total Score < 15
+3. **Block start:** Press Play; UXF auto-starts trial sequence
+4. **Monitor:** Watch FPSVR overlay for frame rate; if fps < 25 for >5s, abort block
+5. **Trial completion:** UXF auto-records all trial data
+6. **Post-block questionnaires:** IPQ + CIS-10 administered in-headset via UXF questionnaire component
+7. **Post-block SSQ:** Administer SSQ; if Total Score ≥15, terminate session
+8. **Rest:** Minimum 2-minute seated rest; HMD can be removed
+9. **Data verification:** Check `data_output/` for correct file creation before proceeding
+
+---
+
+## 5. Data Output Structure
+
+UXF generates the following directory and file structure:
+
 ```
 data_output/
-└── pip_experiment/
-    └── <ppid>/
-        └── <session_num>/
-            ├── trial_results.csv       ← Main results file
-            ├── session_info/
-            │   ├── participant_details.csv
-            │   ├── log.csv
-            │   └── settings.json       ← Settings snapshot
-            ├── trackers/
-            │   ├── head_movement_T001.csv
-            │   ├── head_movement_T002.csv
-            │   └── ...
-            └── other/
-                ├── ipq_block_1.json
-                ├── ssq_block_1.json
-                ├── pip_scale_block_1.json
-                └── ...
+  pip_experiment/
+    PIP_001/
+      1/                          ← Session 1
+        trial_results.csv         ← One row per trial
+        block_1/
+          questionnaire_ipq.csv
+          questionnaire_cis.csv
+          questionnaire_ssq_pre.csv
+          questionnaire_ssq_post.csv
+          head_rotation_log.csv   ← 90Hz rotation data
+        block_2/
+          ...
+        block_3/
+          ...
+        session_log.txt           ← UXF event log
+    PIP_002/
+      ...
 ```
 
----
-
-## 4.3 Trial Results CSV Schema
-
-The `trial_results.csv` file contains one row per trial with these columns:
+### 5.1 trial_results.csv Schema
 
 | Column | Type | Description |
 |---|---|---|
-| `trial_num` | int | Sequential trial number (1-based) |
-| `block_num` | int | Block number (1–3) |
-| `trial_num_in_block` | int | Trial within block (1–20) |
-| `start_time` | float | Unix timestamp of trial start |
-| `end_time` | float | Unix timestamp of trial end |
-| `trial_duration` | float | Duration in seconds |
-| `fidelity_level` | string | `"low"`, `"medium"`, `"high"` |
-| `counterbalance_group` | string | `"A"`, `"B"`, `"C"` |
-| `is_target` | bool | Whether target was shown |
-| `response_made` | bool | Whether participant responded |
-| `response_correct` | bool | Correct response |
-| `reaction_time_ms` | float | RT in ms (NaN if no response) |
-| `display_fps` | int | Configured frame rate |
-| `camera_fov` | float | Field of view in degrees |
-| `render_latency_ms` | int | Simulated latency |
-| `texture_quality` | string | `"512"`, `"1024"`, `"2048"` |
-| `audio_mode` | string | `"none"`, `"stereo"`, `"hrtf"` |
-| `haptic_level` | string | `"none"`, `"vibration"` |
+| `ppid` | string | Participant ID |
+| `session` | int | Session number |
+| `block_num` | int | Block number |
+| `trial_num` | int | Trial number within block |
+| `condition` | string | e.g., `HF-C` |
+| `fidelity_level` | string | `LF`, `MF`, or `HF` |
+| `task_complexity` | string | `S` or `C` |
+| `stimulus_id` | string | Unique stimulus identifier |
+| `correct_response` | int | 0 or 1 (or 1-3 for 3-AFC) |
+| `participant_response` | int | Recorded response |
+| `correct` | bool | Response correctness |
+| `reaction_time_ms` | float | Response latency (ms) |
+| `frame_rate_mean` | float | Mean fps during trial |
+| `frame_rate_min` | float | Min fps during trial |
+| `latency_injected_ms` | int | Artificial latency added |
+| `timestamp_utc` | datetime | Trial start timestamp |
 
 ---
 
-## 4.4 Questionnaire Data Schema
+## 6. Quality Control Checks
 
-### IPQ (stored as JSON after each block)
-```json
-{
-  "block_num": 1,
-  "fidelity_level": "high",
-  "timestamp": "2025-01-15T14:32:00Z",
-  "gp": 5,
-  "sp1": 5, "sp2": 4, "sp3": 6, "sp4": 5, "sp5": 4, "sp6": 5,
-  "inv1": 5, "inv2": 4, "inv3": 5, "inv4": 4,
-  "real1": 4, "real2": 5, "real3": 4, "real4": 3,
-  "sp_total": 29,
-  "inv_total": 18,
-  "real_total": 16
-}
-```
+### 6.1 Real-Time Checks (During Session)
+- Frame rate monitor: Alert if mean fps drops below target by >10%
+- SSQ monitoring: Mandatory post-block check
+- Response rate: If >5 consecutive non-responses, pause and check participant
 
-### SSQ (stored as JSON)
-```json
-{
-  "measurement_point": "post_block_1",
-  "timestamp": "2025-01-15T14:35:00Z",
-  "nausea_items": [0, 1, 0, 0, 0, 0, 0, 0, 0],
-  "oculomotor_items": [1, 0, 1, 0, 0, 0, 0, 0, 0],
-  "disorientation_items": [0, 0, 0, 1, 0, 0, 0],
-  "N": 3.74,
-  "O": 7.58,
-  "D": 7.55,
-  "TS": 8.54
-}
-```
+### 6.2 Post-Session Checks (Within 24h)
 
----
+Run `scripts/pip_qc_check.py --ppid PIP_XXX` to automatically verify:
 
-## 4.5 Head Tracker CSV Schema
-
-Each `head_movement_T###.csv` file contains continuous head position/rotation data:
-
-| Column | Description |
+| Check | Pass Criterion |
 |---|---|
-| `time` | Time within trial (seconds) |
-| `pos_x`, `pos_y`, `pos_z` | Head position (metres, Unity world space) |
-| `rot_x`, `rot_y`, `rot_z`, `rot_w` | Head rotation (quaternion) |
-| `euler_x`, `euler_y`, `euler_z` | Euler angles (degrees) |
+| Trial count | Exactly 20 trials per block |
+| Response rate | ≥80% responses within window |
+| Frame rate | Mean fps within 5% of target |
+| Questionnaire completeness | All items answered |
+| Timestamp monotonicity | No time reversals |
+| SSQ trajectory | No post-block SSQ exceeding stop threshold |
 
-Sampled at 90 Hz (matching display refresh rate).
+### 6.3 Exclusion Criteria (Post-Session)
+
+| Criterion | Action |
+|---|---|
+| >20% missing responses in any block | Exclude that block |
+| SSQ stop criterion triggered | Exclude session |
+| Mean fps <80% of target for >30% of trials | Exclude block, flag for re-run |
+| IPQ-GP score identical across all blocks (invariant response) | Flag for review; exclude if confirmed |
 
 ---
 
-## 4.6 Experimenter Checklist
+## 7. Data Backup and Storage
 
-### Pre-Session
-- [ ] Room temperature comfortable (18–22°C)
-- [ ] HMD lenses cleaned
-- [ ] Guardian boundary configured (min 2×2 m)
-- [ ] Baseline SSQ administered on paper
-- [ ] Participant ID entered in UXF UI
-- [ ] Settings profile selected (correct counterbalance group)
-- [ ] Practice block completed and participant comfortable
+- **Primary:** Local SSD (encrypted, password-protected)
+- **Secondary:** Institutional cloud storage (auto-sync after each session)
+- **Backup frequency:** After every session
+- **Retention period:** Minimum 10 years post-publication (institutional policy)
+- **Anonymisation:** Participant name-to-ID mapping stored separately; only pseudonymous IDs in data files
 
-### During Session
-- [ ] Monitor SSQ scores after each block
-- [ ] Note any verbalised discomfort
-- [ ] Ensure mandatory 2-min rests observed
-- [ ] Check head tracker data quality in real time
+---
 
-### Post-Session
-- [ ] Final SSQ administered
-- [ ] Data output folder verified (all CSVs present)
-- [ ] Settings JSON snapshot confirmed
-- [ ] Debrief completed
-- [ ] Participant payment/credits processed
+## 8. Troubleshooting
+
+| Problem | Likely Cause | Solution |
+|---|---|---|
+| Frame rate below target | GPU overloaded | Reduce render scale; close background apps |
+| HMD tracking lost | Lighting too bright/dark | Adjust room lighting; check base stations |
+| UXF crash mid-block | Unity exception | Check Unity console; re-run block from start |
+| Participant reports nausea | SSQ-N rising | Administer SSQ; if ≥15, terminate |
+| Questionnaire not saving | `StreamingAssets` misconfigured | Verify file paths; restart Unity |
+| Head rotation log empty | Script not attached | Check `HeadRotationLogger` component in scene |
+
+---
+
+## 9. Post-Session Participant Debrief
+
+1. Remove HMD; allow 2 minutes seated recovery
+2. Administer final SSQ (post-VR recovery check)
+3. Provide written debrief document explaining:
+   - Study purpose (VR fidelity and presence)
+   - What was varied (participants are naïve to conditions during experiment)
+   - How to contact research team with concerns
+4. Provide researcher contact card
+5. Log participant dismissal time
