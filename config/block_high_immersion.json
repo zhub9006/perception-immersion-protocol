@@ -1,0 +1,35 @@
+{
+  "_comment": "HIGH IMMERSION BLOCK — maximum fidelity settings",
+  "_block_label": "high_immersion",
+  "_fidelity_level": 3,
+
+  "display_fps": 90,
+  "camera_fov": 110,
+  "render_latency_ms": 0,
+  "texture_quality": "2048",
+  "render_scale": 1.0,
+  "anti_aliasing": 4,
+  "shadow_distance_m": 50,
+  "ambient_occlusion": true,
+  "bloom": true,
+
+  "audio_spatialization": "hrtf",
+  "audio_reverb_ir": "forest_ir",
+  "audio_occlusion": true,
+
+  "haptic_level": "vibration",
+  "haptic_amplitude": 0.8,
+
+  "task_type": "target_detection",
+  "stimulus_duration_ms": 200,
+  "isi_min_ms": 800,
+  "isi_max_ms": 2000,
+  "target_probability": 0.25,
+  "n_trials": 20,
+  "response_window_ms": 1500,
+  "feedback_duration_ms": 500,
+
+  "expected_ipq_gp_score": 5.2,
+  "expected_pip_scale_score": 54,
+  "expected_ssq_ts": 8
+}
